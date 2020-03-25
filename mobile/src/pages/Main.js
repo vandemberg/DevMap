@@ -5,6 +5,7 @@ import MapView, { Marker, Callout } from "react-native-maps";
 import { MaterialIcons } from '@expo/vector-icons';
 
 import api from "./../services/api";
+import { connect, disconnect, subscribeToNewDevs } from './../services/socket';
 
 import {
   requestPermissionsAsync,
@@ -14,8 +15,16 @@ import {
 function Main({ navigation }) {
   const [devs, setDevs] = useState([]);
   const [techs, setTechs] = useState('react native');
-
   const [currentRegion, setCurrentRegion] = useState(null);
+
+  function setupWebSocket() {
+    const { latitude, longitude } = currentRegion;
+    connect(
+      latitude,
+      longitude,
+      techs
+    );
+  }
 
   async function loadDevs() {
     const { latitude, longitude } = currentRegion;
@@ -28,10 +37,13 @@ function Main({ navigation }) {
       }
     });
 
-    console.log(response.data);
-
     setDevs(response.data);
+    setupWebSocket();
   }
+
+  useEffect(() => {
+    subscribeToNewDevs(dev => setDevs([...devs, dev]));
+  })
 
   function handleRegionChanged(region) {
     setCurrentRegion(region)
